@@ -1,65 +1,110 @@
-# Contact Sheet — client-side responsive image builder
+# Contact Sheet
 
-A Next.js + Tailwind front end that reproduces your original `image-builder.js`
-(sharp) pipeline entirely **in the browser**: pick up to 5 images, it resizes
-each to every configured breakpoint, re-encodes to WebP + the original
-format, and generates the matching `<picture>` HTML — same as the Node
-script, just running on-device with the Canvas API instead of a server.
+**A responsive image builder that runs entirely in your browser.**
 
-No upload endpoint, no API route, no image ever leaves the user's machine.
+Drop in up to 5 images, and Contact Sheet resizes each one to a full set of
+responsive breakpoints, re-encodes them to WebP and their original format,
+and generates the matching `<picture>` HTML — ready to paste into a site or
+theme. No backend, no upload endpoint, no image ever leaves your device.
 
-## Run it locally
+---
+
+## What it does
+
+- **Batch processing** — load up to 5 images (PNG, JPG, or WebP) at once
+- **Responsive variants** — generates every configured width (default: `320`
+  → `1920px`) for each image, skipping any width larger than the source so
+  nothing gets upscaled
+- **Modern formats** — outputs both WebP and the image's original format at
+  each width, so you get a real `srcset`, not just one resized file
+- **Ready-to-use markup** — builds a `<picture>` tag per image with correct
+  `srcset`, `sizes`, `width`/`height`, `loading`, and `decoding` attributes
+- **Configurable on the fly** — adjust widths, JPEG/WebP quality, and the
+  path prefix baked into the generated URLs, right from the UI
+- **One-click export** — download a single image's variants + HTML as a
+  `.zip`, or grab everything as one bundle
+- **100% client-side** — every resize and re-encode happens on an in-memory
+  `<canvas>` in the visitor's own browser
+
+## Why no server?
+
+The whole point of this tool is that it's just a static front end. There's
+nothing to host beyond the app itself, nothing to pay for per image
+processed, and no privacy concern about where uploaded images go — because
+they never go anywhere. That also means it deploys anywhere that can serve a
+Next.js app, Vercel included, with zero configuration.
+
+## Tech stack
+
+- [Next.js 14](https://nextjs.org) (App Router)
+- [Tailwind CSS](https://tailwindcss.com)
+- [TypeScript](https://www.typescriptlang.org)
+- [JSZip](https://stuk.github.io/jszip/) for client-side `.zip` bundling
+- The browser's native [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) for resizing and re-encoding — no WASM, no image library dependency
+
+## Getting started
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open [http://localhost:3000](http://localhost:3000) and drop in some images.
 
-## Deploy to Vercel
+## Deploying
 
-Because there's no backend, this deploys as a static-friendly Next.js app —
-Vercel auto-detects everything.
+This is a standard Next.js app, so Vercel auto-detects everything:
 
-**Dashboard (easiest):**
-1. Push this folder to a GitHub repo.
-2. Go to vercel.com → **Add New → Project** → import the repo.
-3. Framework preset: Next.js (auto-detected). Leave build settings default
-   (`npm run build`, output handled automatically).
-4. Click **Deploy**. Done — you'll get a `*.vercel.app` URL.
+1. Push this repo to GitHub
+2. Import it at [vercel.com](https://vercel.com) → **Add New → Project**
+3. Leave the default build settings (`npm run build`) and click **Deploy**
 
-**CLI (faster if you don't want a repo yet):**
-```bash
-npm i -g vercel
-vercel        # first deploy, follow the prompts
-vercel --prod # promote to production
+No environment variables are required.
+
+## Project structure
+
+```
+app/
+  layout.tsx          Root layout, loads fonts, sets global metadata
+  page.tsx             Main page: upload, settings, processing, results
+  globals.css          Tailwind base + the film-strip/darkroom styling
+components/
+  Dropzone.tsx          Drag-and-drop upload zone (caps at 5 files)
+  PreviewThumb.tsx      Thumbnail shown for a queued, not-yet-processed image
+  ResultCard.tsx        Per-image results: stats, generated HTML, downloads
+lib/
+  imageProcessor.ts     Core logic — resize + re-encode via canvas, builds the <picture> HTML
+  zip.ts                Bundles all processed variants into a downloadable .zip
 ```
 
-No environment variables are needed — there's nothing server-side to configure.
+## Configuration
 
-## How the compression logic maps to the original script
+Default settings live in `DEFAULT_CONFIG` inside `lib/imageProcessor.ts`:
 
-| `image-builder.js` (sharp, Node) | This app (Canvas, browser) |
-|---|---|
-| `config.json` widths/quality | `lib/imageProcessor.ts` → `DEFAULT_CONFIG`, editable in the UI's "build settings" panel |
-| `sharp(file).resize(...)` | `canvas.drawImage()` onto a sized `<canvas>` |
-| `.avif()` / `.webp()` / `.jpeg()` / `.png()` | `canvas.toBlob('image/webp' | 'image/jpeg' | 'image/png', quality)` |
-| Loop over widths, write files to `/output` | Loop over widths, keep `Blob`s in memory, zipped client-side with `jszip` |
-| Writes `<picture>` to `{filename}.html` | Same template, built as a string per image, shown in an expandable code block + included in the zip |
+```ts
+{
+  widths: [320, 420, 640, 768, 992, 1200, 1400, 1600, 1920],
+  jpegQuality: 0.82,
+  webpQuality: 0.78,
+  sizes: "100vw",
+  loading: "lazy",
+  decoding: "async",
+  themePath: "/assets/images",
+}
+```
 
-**One intentional difference: AVIF is not generated.** Real AVIF *encoding*
-in a browser needs a WASM codec (there's no native `canvas.toBlob('image/avif')`
-support across browsers yet), which adds a fair bit of bundle size and
-complexity. The app ships WebP + the original format, which covers the vast
-majority of real-world `<picture>` usage. If you want AVIF back, the cleanest
-path is adding [`@jsquash/avif`](https://github.com/jamsinclair/jSquash) to
-`lib/imageProcessor.ts` and generating a third `<source>` — happy to wire
-that in if you want it.
+These can also be overridden per session from the "Show build settings" panel
+in the UI — widths, quality, and the path prefix used in the generated
+`srcset` URLs.
 
-## Notes
+## Known limitation
 
-- **File cap**: hardcoded to 5 in `components/Dropzone.tsx` (`MAX_FILES`) — change it there if needed.
-- **Quality values** are 0–1 floats (Canvas API convention) rather than sharp's 0–100 scale; the defaults (`jpegQuality: 0.82`, `webpQuality: 0.78`) match your original config's *intent*, not identical bytes.
-- **`themePath`** is just the string prefix baked into the generated `srcset` URLs (mirrors `config.json`'s `themePath`) — edit it in the UI before processing, or change `DEFAULT_CONFIG` in `lib/imageProcessor.ts`.
-- Everything runs synchronously per image in the main thread via `canvas.toBlob`, which is async but not offloaded to a Worker. For 5 images at typical photo resolutions this is fine; if you push much larger batches later, moving the loop into a Web Worker would keep the UI perfectly smooth.
+AVIF output isn't included. Browsers don't yet support native AVIF *encoding*
+via the Canvas API, so producing it client-side would require bundling a WASM
+codec. WebP + the original format are generated instead, which covers the
+large majority of real-world `<picture>` usage. See the note in
+`lib/imageProcessor.ts` if you want to add AVIF support later.
+
+## License
+
+MIT — use it, fork it, ship it.
