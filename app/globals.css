@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-image: radial-gradient(circle at 1px 1px, rgba(242, 237, 228, 0.035) 1px, transparent 0);
+  background-size: 18px 18px;
+}
+
+/* Sprocket-hole strip used along the dropzone + frame cards — the film-strip motif */
+.sprockets {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent 10px,
+    rgba(20, 18, 15, 0.9) 10px,
+    rgba(20, 18, 15, 0.9) 18px
+  );
+  background-size: 28px 100%;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+
+.sprockets span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #14120f;
+}
+
+::selection {
+  background: #e8871e;
+  color: #14120f;
+}
+
+/* Custom scrollbar to match the darkroom palette */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #14120f;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3226;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e8871e;
+}
