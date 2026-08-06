@@ -208,6 +208,8 @@ export default function Home() {
 
       <footer className="mt-16 border-t border-base-border pt-6 font-mono text-xs text-paper-muted">
         Every resize and re-encode happens on your device with the Canvas API. No image is ever transmitted anywhere.
+        <br/>
+        Created by <a href="https://vanshajkataria.vercel.app" target="_blank" className="underline font-bold">Vanshaj Kataria</a>
       </footer>
     </main>
   );
