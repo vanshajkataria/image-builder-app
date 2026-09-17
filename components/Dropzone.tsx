@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-const MAX_FILES = 5;
+const MAX_FILES = 1000;
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
 
 interface DropzoneProps {
