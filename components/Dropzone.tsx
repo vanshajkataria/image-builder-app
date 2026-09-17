@@ -68,7 +68,7 @@ export default function Dropzone({ files, onFilesChange, disabled }: DropzonePro
           <p className="max-w-sm text-paper/90">
             {atLimit
               ? `${MAX_FILES} of ${MAX_FILES} images loaded. Remove one below to swap it out.`
-              : "Drag up to 5 images here, or click to browse"}
+              : "Drag up to 1000 images here, or click to browse"}
           </p>
           <p className="font-mono text-xs text-paper-muted">PNG · JPG · WEBP</p>
         </div>
